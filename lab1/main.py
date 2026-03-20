@@ -1,16 +1,21 @@
 import math
 
-
+# Базовий клас фігури
 class Shape:
     def area(self):
-        raise NotImplementedError
+        raise NotImplementedError("Method area() must be implemented")
 
     def perimeter(self):
-        raise NotImplementedError
+        raise NotImplementedError("Method perimeter() must be implemented")
 
 
+# --- Класи конкретних фігур ---
 class Triangle(Shape):
     def __init__(self, a, b, c):
+        if a <= 0 or b <= 0 or c <= 0:
+            raise ValueError("Triangle sides must be positive")
+        if a + b <= c or a + c <= b or b + c <= a:
+            raise ValueError("Triangle with such sides does not exist")
         self.a = a
         self.b = b
         self.c = c
@@ -20,7 +25,10 @@ class Triangle(Shape):
 
     def area(self):
         p = self.perimeter() / 2
-        return math.sqrt(p * (p - self.a) * (p - self.b) * (p - self.c))
+        value = p * (p - self.a) * (p - self.b) * (p - self.c)
+        if value < 0:
+            raise ValueError("Cannot calculate triangle area")
+        return math.sqrt(value)
 
     def __str__(self):
         return f"Triangle({self.a}, {self.b}, {self.c})"
@@ -28,6 +36,8 @@ class Triangle(Shape):
 
 class Rectangle(Shape):
     def __init__(self, a, b):
+        if a <= 0 or b <= 0:
+            raise ValueError("Rectangle sides must be positive")
         self.a = a
         self.b = b
 
@@ -43,26 +53,31 @@ class Rectangle(Shape):
 
 class Trapeze(Shape):
     def __init__(self, a, b, c, d):
+        if a <= 0 or b <= 0 or c <= 0 or d <= 0:
+            raise ValueError("Trapeze sides must be positive")
         self.a = a
         self.b = b
         self.c = c
         self.d = d
+        if not self._is_valid():
+            raise ValueError("Trapeze with such sides does not exist")
+
+    def _is_valid(self):
+        diff = abs(self.a - self.b)
+        summ = self.c + self.d
+        return diff < summ
 
     def perimeter(self):
         return self.a + self.b + self.c + self.d
 
     def area(self):
+        if self.a == self.b:
+            raise ValueError("Cannot calculate trapeze area with equal bases")
         diff = abs(self.a - self.b)
-
-        if diff == 0:
-            return 0
-
         x = (diff ** 2 + self.c ** 2 - self.d ** 2) / (2 * diff)
         h_squared = self.c ** 2 - x ** 2
-
-        if h_squared < 0:
-            return 0
-
+        if h_squared <= 0:
+            raise ValueError("Cannot calculate trapeze area")
         h = math.sqrt(h_squared)
         return (self.a + self.b) * h / 2
 
@@ -72,6 +87,10 @@ class Trapeze(Shape):
 
 class Parallelogram(Shape):
     def __init__(self, a, b, h):
+        if a <= 0 or b <= 0 or h <= 0:
+            raise ValueError("Parallelogram sides and height must be positive")
+        if h > a:
+            raise ValueError("Height cannot be greater than the corresponding side")
         self.a = a
         self.b = b
         self.h = h
@@ -88,6 +107,8 @@ class Parallelogram(Shape):
 
 class Circle(Shape):
     def __init__(self, r):
+        if r <= 0:
+            raise ValueError("Circle radius must be positive")
         self.r = r
 
     def perimeter(self):
@@ -100,85 +121,125 @@ class Circle(Shape):
         return f"Circle({self.r})"
 
 
+# --- Допоміжні функції ---
+def parse_float_values(values):
+    numbers = []
+    for value in values:
+        try:
+            numbers.append(float(value))
+        except ValueError:
+            raise ValueError(f"'{value}' is not a number")
+    return numbers
+
+
 def create_shape(line):
     parts = line.split()
+    if not parts:
+        raise ValueError("Empty line")
+
     figure_name = parts[0]
+    params = parts[1:]
 
     if figure_name == "Triangle":
-        a, b, c = map(float, parts[1:4])
+        if len(params) != 3:
+            raise ValueError("Triangle must have 3 parameters")
+        a, b, c = parse_float_values(params)
         return Triangle(a, b, c)
-
-    if figure_name == "Rectangle":
-        a, b = map(float, parts[1:3])
+    elif figure_name == "Rectangle":
+        if len(params) != 2:
+            raise ValueError("Rectangle must have 2 parameters")
+        a, b = parse_float_values(params)
         return Rectangle(a, b)
-
-    if figure_name == "Trapeze":
-        a, b, c, d = map(float, parts[1:5])
+    elif figure_name == "Trapeze":
+        if len(params) != 4:
+            raise ValueError("Trapeze must have 4 parameters")
+        a, b, c, d = parse_float_values(params)
         return Trapeze(a, b, c, d)
-
-    if figure_name == "Parallelogram":
-        a, b, h = map(float, parts[1:4])
+    elif figure_name == "Parallelogram":
+        if len(params) != 3:
+            raise ValueError("Parallelogram must have 3 parameters")
+        a, b, h = parse_float_values(params)
         return Parallelogram(a, b, h)
-
-    if figure_name == "Circle":
-        r = float(parts[1])
+    elif figure_name == "Circle":
+        if len(params) != 1:
+            raise ValueError("Circle must have 1 parameter")
+        r = parse_float_values(params)[0]
         return Circle(r)
-
-    raise ValueError(f"Unknown figure: {figure_name}")
+    else:
+        raise ValueError(f"Unknown figure: {figure_name}")
 
 
 def read_shapes_from_file(filename):
     shapes = []
-
     with open(filename, "r", encoding="utf-8") as file:
-        for line in file:
+        for line_number, line in enumerate(file, start=1):
             line = line.strip()
-            if line:
+            if not line:
+                continue
+            try:
                 shape = create_shape(line)
                 shapes.append(shape)
-
+            except ValueError as error:
+                print(f"File {filename}, line {line_number}: {error}")
     return shapes
 
 
 def find_shape_with_max_area(shapes):
-    return max(shapes, key=lambda shape: shape.area())
+    valid_shapes = []
+    for shape in shapes:
+        try:
+            _ = shape.area()
+            valid_shapes.append(shape)
+        except ValueError:
+            continue
+    if not valid_shapes:
+        return None
+    return max(valid_shapes, key=lambda s: s.area())
 
 
 def find_shape_with_max_perimeter(shapes):
-    return max(shapes, key=lambda shape: shape.perimeter())
+    valid_shapes = []
+    for shape in shapes:
+        try:
+            _ = shape.perimeter()
+            valid_shapes.append(shape)
+        except ValueError:
+            continue
+    if not valid_shapes:
+        return None
+    return max(valid_shapes, key=lambda s: s.perimeter())
 
 
 def process_file(filename):
-    print(f"Processing file: {filename}")
-
+    print(f"\nProcessing file: {filename}")
     shapes = read_shapes_from_file(filename)
+
+    if not shapes:
+        print("No valid shapes found in file")
+        return
 
     max_area_shape = find_shape_with_max_area(shapes)
     max_perimeter_shape = find_shape_with_max_perimeter(shapes)
 
-    print("Shape with maximum area:")
-    print(max_area_shape)
-    print(f"Area = {max_area_shape.area():.2f}")
+    if max_area_shape:
+        print("Shape with maximum area:")
+        print(max_area_shape)
+        print(f"Area = {max_area_shape.area():.2f}")
+    else:
+        print("No shape with valid area found")
 
-    print("Shape with maximum perimeter:")
-    print(max_perimeter_shape)
-    print(f"Perimeter = {max_perimeter_shape.perimeter():.2f}")
-
-    print("-" * 40)
+    if max_perimeter_shape:
+        print("Shape with maximum perimeter:")
+        print(max_perimeter_shape)
+        print(f"Perimeter = {max_perimeter_shape.perimeter():.2f}")
+    else:
+        print("No shape with valid perimeter found")
 
 
 def main():
     files = ["input01.txt", "input02.txt", "input03.txt"]
-
     for filename in files:
-        try:
-            process_file(filename)
-        except FileNotFoundError:
-            print(f"File {filename} not found.")
-            print("-" * 40)
-        except Exception as error:
-            print(f"Error while processing {filename}: {error}")
-            print("-" * 40)
+        process_file(filename)
 
 
 if __name__ == "__main__":
