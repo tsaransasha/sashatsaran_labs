@@ -153,5 +153,3 @@ files = ["input01.txt", "input02.txt", "input03.txt"]
 
 for filename in files:
     analyze(filename)
-
-# 24.03
