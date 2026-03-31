@@ -1,9 +1,8 @@
 import turtle
 import random
 
-# --------------------------
 # Налаштування вікна
-# --------------------------
+
 screen = turtle.Screen()
 screen.setup(1200, 800)
 screen.bgcolor("lightyellow")
