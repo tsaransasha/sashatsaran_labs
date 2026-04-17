@@ -2,7 +2,7 @@ import math
 import os
 
 
-# ================== БАЗОВИЙ КЛАС ==================
+# Base class
 class Figure:
     def dimension(self):
         raise NotImplementedError()
@@ -26,19 +26,26 @@ class Figure:
         raise NotImplementedError()
 
 
-# ================== 2D ФІГУРИ ==================
+# 2D
 
 class Triangle(Figure):
     def __init__(self, a, b, c):
         self.a, self.b, self.c = a, b, c
 
+    def is_valid(self):
+        return (self.a + self.b > self.c and
+                self.a + self.c > self.b and
+                self.b + self.c > self.a)
+
     def dimension(self):
         return 2
 
     def perimeter(self):
-        return self.a + self.b + self.c
+        return self.a + self.b + self.c if self.is_valid() else None
 
     def square(self):
+        if not self.is_valid():
+            return 0
         p = self.perimeter() / 2
         return math.sqrt(p * (p - self.a) * (p - self.b) * (p - self.c))
 
@@ -74,9 +81,11 @@ class Trapeze(Figure):
         return self.a + self.b + self.c + self.d
 
     def square(self):
-        # припущення: рівнобічна трапеція
-        h = math.sqrt(self.c ** 2 - ((self.a - self.b) ** 2) / 4)
-        return (self.a + self.b) / 2 * h
+        try:
+            h = math.sqrt(self.c ** 2 - ((self.a - self.b) ** 2) / 4)
+            return (self.a + self.b) / 2 * h
+        except:
+            return 0
 
     def volume(self):
         return self.square()
@@ -116,7 +125,7 @@ class Circle(Figure):
         return self.square()
 
 
-# ================== 3D ФІГУРИ ==================
+#  3D
 
 class Ball(Circle):
     def dimension(self):
@@ -226,51 +235,56 @@ class TriangularPrism(Triangle):
         return self.squareBase() * self.h
 
 
-# ================== СТВОРЕННЯ ФІГУРИ ==================
+# Create
 
 def create_figure(line):
-    parts = line.split()
-    name = parts[0]
-    nums = list(map(float, parts[1:]))
+    try:
+        parts = line.split()
+        name = parts[0]
+        nums = list(map(float, parts[1:]))
 
-    if name == "Triangle":
-        return Triangle(*nums)
-    elif name == "Rectangle":
-        return Rectangle(*nums)
-    elif name == "Trapeze":
-        return Trapeze(*nums)
-    elif name == "Parallelogram":
-        return Parallelogram(*nums)
-    elif name == "Circle":
-        return Circle(*nums)
-    elif name == "Ball":
-        return Ball(*nums)
-    elif name == "Cone":
-        return Cone(*nums)
-    elif name == "RectangularParallelepiped":
-        return RectangularParallelepiped(*nums)
-    elif name == "TriangularPyramid":
-        return TriangularPyramid(*nums)
-    elif name == "QuadrangularPyramid":
-        return QuadrangularPyramid(*nums)
-    elif name == "TriangularPrism":
-        return TriangularPrism(*nums)
+        mapping = {
+            "Triangle": Triangle,
+            "Rectangle": Rectangle,
+            "Trapeze": Trapeze,
+            "Parallelogram": Parallelogram,
+            "Circle": Circle,
+            "Ball": Ball,
+            "Cone": Cone,
+            "RectangularParallelepiped": RectangularParallelepiped,
+            "TriangularPyramid": TriangularPyramid,
+            "QuadrangularPyramid": QuadrangularPyramid,
+            "TriangularPrism": TriangularPrism,
+        }
+
+        if name in mapping:
+            return mapping[name](*nums)
+
+    except:
+        return None
 
     return None
 
 
-# ================== ПОШУК НАЙБІЛЬШОЇ ==================
+# Search
 
-def find_max_figure(filename):
+def find_max_figure(filepath):
     figures = []
 
-    with open(filename) as f:
+    with open(filepath) as f:
         for line in f:
             if not line.strip():
                 continue
+
             fig = create_figure(line.strip())
+
             if fig:
-                figures.append(fig)
+                try:
+                    val = fig.volume()
+                    if val is not None:
+                        figures.append(fig)
+                except:
+                    pass
 
     if not figures:
         return None
@@ -278,7 +292,7 @@ def find_max_figure(filename):
     return max(figures, key=lambda f: f.volume())
 
 
-# ================== ГОЛОВНА ЧАСТИНА ==================
+# Main
 
 if __name__ == "__main__":
     BASE_DIR = os.path.dirname(__file__)
@@ -290,4 +304,4 @@ if __name__ == "__main__":
         print("Найбільша фігура:", type(fig).__name__)
         print("Міра:", fig.volume())
     else:
-        print("Фігури не знайдені")
+        print("Немає коректних фігур")
