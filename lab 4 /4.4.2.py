@@ -240,7 +240,7 @@ class TicTacToe:
         turtle.mainloop()
 
 
-#  Запуск гри
+# Запуск гри
 
 if __name__ == "__main__":
     game = TicTacToe()
