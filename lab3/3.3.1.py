@@ -2,7 +2,7 @@ import math
 import os
 
 
-# Base class
+# Базовий клас
 class Figure:
     def dimension(self):
         raise NotImplementedError()
@@ -30,22 +30,20 @@ class Figure:
 
 class Triangle(Figure):
     def __init__(self, a, b, c):
+        # Перевірка: сторони мають бути додатними та виконуватися нерівність трикутника
+        if a <= 0 or b <= 0 or c <= 0:
+            raise ValueError("Сторони трикутника повинні бути додатними")
+        if not (a + b > c and a + c > b and b + c > a):
+            raise ValueError("Трикутник із такими сторонами не існує")
         self.a, self.b, self.c = a, b, c
-
-    def is_valid(self):
-        return (self.a + self.b > self.c and
-                self.a + self.c > self.b and
-                self.b + self.c > self.a)
 
     def dimension(self):
         return 2
 
     def perimeter(self):
-        return self.a + self.b + self.c if self.is_valid() else None
+        return self.a + self.b + self.c
 
     def square(self):
-        if not self.is_valid():
-            return 0
         p = self.perimeter() / 2
         return math.sqrt(p * (p - self.a) * (p - self.b) * (p - self.c))
 
@@ -55,6 +53,8 @@ class Triangle(Figure):
 
 class Rectangle(Figure):
     def __init__(self, a, b):
+        if a <= 0 or b <= 0:
+            raise ValueError("Сторони прямокутника повинні бути додатними")
         self.a, self.b = a, b
 
     def dimension(self):
@@ -72,6 +72,8 @@ class Rectangle(Figure):
 
 class Trapeze(Figure):
     def __init__(self, a, b, c, d):
+        if a <= 0 or b <= 0 or c <= 0 or d <= 0:
+            raise ValueError("Параметри трапеції повинні бути додатними")
         self.a, self.b, self.c, self.d = a, b, c, d
 
     def dimension(self):
@@ -81,8 +83,9 @@ class Trapeze(Figure):
         return self.a + self.b + self.c + self.d
 
     def square(self):
+
         try:
-            h = math.sqrt(self.c ** 2 - ((self.a - self.b) ** 2) / 4)
+            h = math.sqrt(max(0, self.c ** 2 - ((self.a - self.b) ** 2) / 4))
             return (self.a + self.b) / 2 * h
         except:
             return 0
@@ -93,6 +96,8 @@ class Trapeze(Figure):
 
 class Parallelogram(Figure):
     def __init__(self, a, b, h):
+        if a <= 0 or b <= 0 or h <= 0:
+            raise ValueError("Параметри паралелограма повинні бути додатними")
         self.a, self.b, self.h = a, b, h
 
     def dimension(self):
@@ -110,6 +115,8 @@ class Parallelogram(Figure):
 
 class Circle(Figure):
     def __init__(self, r):
+        if r <= 0:
+            raise ValueError("Радіус має бути додатним")
         self.r = r
 
     def dimension(self):
@@ -125,7 +132,7 @@ class Circle(Figure):
         return self.square()
 
 
-#  3D
+# 3D
 
 class Ball(Circle):
     def dimension(self):
@@ -141,6 +148,8 @@ class Ball(Circle):
 class Cone(Circle):
     def __init__(self, r, h):
         super().__init__(r)
+        if h <= 0:
+            raise ValueError("Висота має бути додатною")
         self.h = h
 
     def dimension(self):
@@ -163,6 +172,8 @@ class Cone(Circle):
 class RectangularParallelepiped(Rectangle):
     def __init__(self, a, b, c):
         super().__init__(a, b)
+        if c <= 0:
+            raise ValueError("Висота (c) має бути додатною")
         self.c = c
 
     def dimension(self):
@@ -183,7 +194,10 @@ class RectangularParallelepiped(Rectangle):
 
 class TriangularPyramid(Triangle):
     def __init__(self, a, h):
+        # Створюємо правильний трикутник в основі (a, a, a)
         super().__init__(a, a, a)
+        if h <= 0:
+            raise ValueError("Висота піраміди має бути додатною")
         self.h = h
 
     def dimension(self):
@@ -202,6 +216,8 @@ class TriangularPyramid(Triangle):
 class QuadrangularPyramid(Rectangle):
     def __init__(self, a, b, h):
         super().__init__(a, b)
+        if h <= 0:
+            raise ValueError("Висота піраміди має бути додатною")
         self.h = h
 
     def dimension(self):
@@ -220,6 +236,8 @@ class QuadrangularPyramid(Rectangle):
 class TriangularPrism(Triangle):
     def __init__(self, a, b, c, h):
         super().__init__(a, b, c)
+        if h <= 0:
+            raise ValueError("Висота призми має бути додатною")
         self.h = h
 
     def dimension(self):
@@ -235,11 +253,14 @@ class TriangularPrism(Triangle):
         return self.squareBase() * self.h
 
 
-# Create
+# Допоміжна функція
 
 def create_figure(line):
     try:
         parts = line.split()
+        if not parts:
+            return None
+
         name = parts[0]
         nums = list(map(float, parts[1:]))
 
@@ -258,50 +279,60 @@ def create_figure(line):
         }
 
         if name in mapping:
+
             return mapping[name](*nums)
 
-    except:
+    except (ValueError, TypeError, ZeroDivisionError):
+
         return None
 
     return None
 
 
-# Search
+
 
 def find_max_figure(filepath):
     figures = []
 
-    with open(filepath) as f:
+    if not os.path.exists(filepath):
+        return None
+
+    with open(filepath, 'r', encoding='utf-8') as f:
         for line in f:
-            if not line.strip():
+            line = line.strip()
+            if not line:
                 continue
 
-            fig = create_figure(line.strip())
-
+            fig = create_figure(line)
             if fig:
-                try:
-                    val = fig.volume()
-                    if val is not None:
-                        figures.append(fig)
-                except:
-                    pass
+                figures.append(fig)
 
     if not figures:
         return None
 
+
     return max(figures, key=lambda f: f.volume())
 
 
-# Main
+# Головний блок
 
 if __name__ == "__main__":
     BASE_DIR = os.path.dirname(__file__)
     file_path = os.path.join(BASE_DIR, "input01.txt")
 
+    # Створимо файл для тесту, якщо його немає
+    if not os.path.exists(file_path):
+        with open(file_path, "w") as f:
+            f.write("Triangle 3 4 5\n")
+            f.write("Rectangle 10 20\n")
+            f.write("Circle 5\n")
+            f.write("Triangle 1 1 10\n")  # Некоректний (не створиться)
+            f.write("Ball 10\n")
+
     fig = find_max_figure(file_path)
 
     if fig:
-        print("Найбільша фігура:", type(fig).__name__)
-        print("Міра:", fig.volume())
+        print(f"Найбільша фігура: {type(fig).__name__}")
+        print(f"Міра (об'єм/площа): {fig.volume():.2f}")
     else:
-        print("Немає коректних фігур")
+        print("Немає коректних фігур у файлі.")
