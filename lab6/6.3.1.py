@@ -62,7 +62,22 @@ class Rational:
         return self
 
 
-# Клас RationalList
+class RationalListIterator:
+    def __init__(self, items):
+        self._items = items
+        self._index = 0
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        if self._index >= len(self._items):
+            raise StopIteration
+        result = self._items[self._index]
+        self._index += 1
+        return result
+
+
 class RationalList:
     def __init__(self, items=None):
         self._items = []
@@ -134,17 +149,18 @@ class RationalList:
             total += item
         return total
 
+    def __iter__(self):
+        sorted_items = sorted(self._items, key=lambda x: (x.denominator(), x.numerator()), reverse=True)
+        return RationalListIterator(sorted_items)
+
 
 def read_rationals_from_file(filename):
-    """Читає лише числа (цілі та дроби), ігноруючи все інше"""
     rational_list = RationalList()
 
     with open(filename, 'r', encoding='utf-8') as file:
         for line in file:
-            # Розбиваємо рядок на слова
             words = line.strip().split()
             for word in words:
-                # Перевіряємо, чи це дріб (містить '/')
                 if '/' in word:
                     parts = word.split('/')
                     if len(parts) == 2:
@@ -153,15 +169,12 @@ def read_rationals_from_file(filename):
                             den = int(parts[1])
                             rational_list.append(Rational(num, den))
                         except ValueError:
-                            # Якщо не вийшло - ігноруємо
                             pass
                 else:
-                    # Перевіряємо, чи це ціле число
                     try:
                         num = int(word)
                         rational_list.append(Rational(num, 1))
                     except ValueError:
-                        # Якщо не число - ігноруємо
                         pass
 
     return rational_list
@@ -180,6 +193,7 @@ def main():
 
             total = rational_list.sum()
             print(f"{filename}:")
+            print(f"  Послідовність: {', '.join(str(item) for item in rational_list)}")
             print(f"  Кількість чисел: {len(rational_list)}")
             print(f"  Сума: {total}")
             if float(total) != int(float(total)):
