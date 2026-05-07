@@ -61,6 +61,16 @@ class Rational:
         self._numerator, self._denominator = res._numerator, res._denominator
         return self
 
+    def __eq__(self, other):
+        if isinstance(other, Rational):
+            return self._numerator == other._numerator and self._denominator == other._denominator
+        elif isinstance(other, int):
+            return self._numerator == other and self._denominator == 1
+        return NotImplemented
+
+    def __hash__(self):
+        return hash((self._numerator, self._denominator))
+
 
 class RationalListIterator:
     def __init__(self, items):
@@ -150,7 +160,9 @@ class RationalList:
         return total
 
     def __iter__(self):
-        sorted_items = sorted(self._items, key=lambda x: (x.denominator(), x.numerator()), reverse=True)
+        # Видаляємо дублікати за допомогою set, потім сортуємо
+        unique_items = list(set(self._items))
+        sorted_items = sorted(unique_items, key=lambda x: (x.denominator(), x.numerator()), reverse=True)
         return RationalListIterator(sorted_items)
 
 
@@ -193,8 +205,9 @@ def main():
 
             total = rational_list.sum()
             print(f"{filename}:")
-            print(f"  Послідовність: {', '.join(str(item) for item in rational_list)}")
-            print(f"  Кількість чисел: {len(rational_list)}")
+            print(f"  Послідовність : {', '.join(str(item) for item in rational_list)}")
+            print(f"  Кількість чисел : {len(rational_list)}")
+            print(f"  Кількість унікальних чисел: {len(set(rational_list._items))}")
             print(f"  Сума: {total}")
             if float(total) != int(float(total)):
                 print(f"  Сума (десятковий вигляд): {float(total):.6f}")
