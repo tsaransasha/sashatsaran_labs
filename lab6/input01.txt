@@ -7,7 +7,7 @@
                        Trapeze   19    9   16   25 
            QuadrangularPyramid   14   18   22 
                       Triangle   11   25   17 
-                          Cone   15    9
+                          Cone   15    9 
                         Circle    2 
                TriangularPrism   17    0    7   15 
                  Parallelogram   23   10    0 
