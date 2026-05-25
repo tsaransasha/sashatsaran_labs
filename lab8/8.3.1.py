@@ -1,105 +1,123 @@
 import math
 
-# a
 
-print("Завдання а)")
-x = float(input("Введіть x: "))
-k = int(input("Введіть k (k >= 1): "))
+# а
+def recursive_power(x, power):
+    """Рекурсивне обчислення степеня x^power."""
+    if power == 0:
+        return 1
+    return x * recursive_power(x, power - 1)
 
-xk = (x ** k) / k
-print(f"x{k} =", xk)
 
-# b
+def sequence_generator_a(x, k):
+    """Генератор елементів послідовності до k включно."""
+    for i in range(1, k + 1):
+        yield recursive_power(x, i) / i
 
-print("\n Завдання б)")
-n = int(input("Введіть n: "))
 
-pn = 1
-for i in range(1, n + 1):
-    pn = pn * (1 / math.factorial(i + 1))
+#b
 
-print("Pn =", pn)
+def product_recursive(n):
+    """Рекурсивне обчислення добутку P_n."""
+    if n == 1:
+        return 1 / (1 + 1)
+    return product_recursive(n - 1) * (1 / (n + 1))
 
-# в
-print("\n Завдання в) ")
-n = int(input("Введіть порядок матриці n: "))
 
-matrix = []
-for i in range(n):
-    row = []
-    for j in range(n):
-        row.append(0)
-    matrix.append(row)
+def product_history_generator(n):
+    """Генератор, що повертає історію зміни добутку від 1 до n."""
+    current_product = 1.0
+    for i in range(1, n + 1):
+        current_product *= (1 / (i + 1))
+        yield current_product
 
-for i in range(n):
-    matrix[i][i] = 2
-    if i + 1 < n:
-        matrix[i][i + 1] = 3
-    if i - 1 >= 0:
-        matrix[i][i - 1] = 1
 
-print("Матриця:")
-for row in matrix:
-    print(row)
+#c
 
-m = []
-for i in range(n):
-    m.append(matrix[i][:])
+def determinant_recursive(n):
+    if n == 1:
+        return 2
+    if n == 2:
+        return 1
+    return 2 * determinant_recursive(n - 1) - 3 * determinant_recursive(n - 2)
 
-det = 1
-for i in range(n):
-    if m[i][i] == 0:
-        swapped = False
-        for j in range(i + 1, n):
-            if m[j][i] != 0:
-                m[i], m[j] = m[j], m[i]
-                det = det * (-1)
-                swapped = True
-                break
-        if not swapped:
-            det = 0
-            break
 
-    det = det * m[i][i]
-    for j in range(i + 1, n):
-        koef = m[j][i] / m[i][i]
-        for l in range(i, n):
-            m[j][l] = m[j][l] - koef * m[i][l]
+def determinant_generator(n):
+    for i in range(1, n + 1):
+        yield determinant_recursive(i)
 
-print("Визначник =", round(det))
 
-# г
-print("\n Завдання г) ")
-n = int(input("Введіть n: "))
+# d
+def calculate_a_recursive(k):
+    if k == 1:
+        return 0
+    if k == 2:
+        return 1
+    return calculate_a_recursive(k - 1) + k * calculate_a_recursive(k - 2)
 
-a = [0] * (n + 1)
-if n >= 1:
-    a[1] = 0
-if n >= 2:
-    a[2] = 1
-for k in range(3, n + 1):
-    a[k] = a[k - 1] + k * a[k - 2]
 
-sn = 0
-for k in range(1, n + 1):
-    sn = sn + (2 ** k) * a[k]
+def sum_terms_generator(n):
+    for k in range(1, n + 1):
+        yield (2 ** k) * calculate_a_recursive(k)
 
-print("Sn =", sn)
-# д
 
-print("\n Завдання д) ")
-x = float(input("Введіть x (в радіанах): "))
-eps = float(input("Введіть точність eps: "))
+# е
 
-summa = 0
-chlen = x
-n = 0
+def taylor_sin_generator(x):
+    term = x
+    m = 0
+    yield term
+    while True:
+        m += 1
+        term = term * (-x ** 2) / ((2 * m) * (2 * m + 1))
+        yield term
 
-while abs(chlen) >= eps:
-    summa = summa + chlen
-    n = n + 1
-    chlen = -chlen * x * x / ((2 * n) * (2 * n + 1))
 
-print("sin(x) через ряд Тейлора =", summa)
-print("sin(x) через math.sin =", math.sin(x))
-print("Різниця =", abs(summa - math.sin(x)))
+def accumulate_taylor_recursive(gen, eps, current_sum=0.0):
+    term = next(gen)
+    current_sum += term
+    if abs(term) < eps:
+        return current_sum
+    return accumulate_taylor_recursive(gen, eps, current_sum)
+
+
+if __name__ == "__main__":
+    # Тест А
+    x_a, k_a = 2.0, 5
+    elements_a = [elem for elem in sequence_generator_a(x_a, k_a)]
+    print(f"Пункт а) Для x={x_a}, k={k_a}:")
+    print(f"  -> Усі згенеровані елементи: {elements_a}")
+    print(f"  -> Шуканий k-й елемент: {elements_a[-1]}")
+    print("  " *50)
+
+    # Тест B
+    n_b = 4
+    print(f"Пункт b) Для n={n_b}:")
+    print(f"  -> Результат рекурсії P_n: {product_recursive(n_b)}")
+    print(f"  -> Етапи добутку (генератор): {list(product_history_generator(n_b))}")
+    print("  " * 50)
+
+    # Тест C
+    n_c = 5
+    print(f"Пункт c) Визначник порядку n={n_c}:")
+    print(f"  -> Результат рекурсії: {determinant_recursive(n_c)}")
+    print(f"  -> Визначники від 1 до {n_c} ступеня: {list(determinant_generator(n_c))}")
+    print("  " * 50)
+
+    # Тест D
+    n_d = 4
+    total_sum_d = sum(sum_terms_generator(n_d))
+    print(f"Пункт d) Для n={n_d}:")
+    print(f"  -> Обчислена сума S_n: {total_sum_d}")
+    print("  " * 50)
+
+    # Тест E
+    x_e, eps_e = 1.0, 1e-6
+    sin_gen = taylor_sin_generator(x_e)
+    calculated_sin = accumulate_taylor_recursive(sin_gen, eps_e)
+    math_sin = math.sin(x_e)
+    print(f"Пункт e) Розклад sin({x_e}) з точністю {eps_e}:")
+    print(f"  -> Через рекурсію + генератор: {calculated_sin}")
+    print(f"  -> Значення з бібліотеки math: {math_sin}")
+    print(f"  -> Абсолютна похибка:          {abs(calculated_sin - math_sin)}")
+    print("  " * 50)
