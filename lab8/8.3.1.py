@@ -3,14 +3,12 @@ import math
 
 # а
 def recursive_power(x, power):
-    """Рекурсивне обчислення степеня x^power."""
     if power == 0:
         return 1
     return x * recursive_power(x, power - 1)
 
 
 def sequence_generator_a(x, k):
-    """Генератор елементів послідовності до k включно."""
     for i in range(1, k + 1):
         yield recursive_power(x, i) / i
 
@@ -18,14 +16,12 @@ def sequence_generator_a(x, k):
 #b
 
 def product_recursive(n):
-    """Рекурсивне обчислення добутку P_n."""
     if n == 1:
         return 1 / (1 + 1)
     return product_recursive(n - 1) * (1 / (n + 1))
 
 
 def product_history_generator(n):
-    """Генератор, що повертає історію зміни добутку від 1 до n."""
     current_product = 1.0
     for i in range(1, n + 1):
         current_product *= (1 / (i + 1))
