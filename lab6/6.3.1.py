@@ -1,3 +1,4 @@
+
 import math
 import re
 
@@ -193,7 +194,7 @@ def read_rationals_from_file(filename):
 
 
 def main():
-    input_files = ["input01.txt", "input02.txt", "input03.txt"]
+    input_files = ["input01.txt"]
 
     for filename in input_files:
         try:
