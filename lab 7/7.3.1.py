@@ -129,7 +129,7 @@ class Rational:
 
 
 if __name__ == '__main__':
-    print("=== Демонстрація класу Rational та RationalError ===\n")
+    print(" Демонстрація класу Rational та RationalError \n")
 
     r1 = Rational(3, 4)
     r2 = Rational('5/6')
