@@ -1,11 +1,16 @@
 from abc import ABC, abstractmethod
 
-HUMANITARIAN = "humanitarian"
-NATURAL = "natural"
-NATURAL_HUMANITARIAN = "natural-humanitarian"
+# Напрями підготовки студента
+HUMANITARIAN = "humanitarian"  # гуманітарний
+NATURAL = "natural"  # природничий
+NATURAL_HUMANITARIAN = "natural-humanitarian"  # природничо-гуманітарний
 
 
+# ---------------------------------------------------------------------------
+#  Елементи: кроки життєдіяльності студента (те, що "відвідується")
+# ---------------------------------------------------------------------------
 class Activity(ABC):
+    """Один крок навчання чи життєдіяльності студента."""
 
     @abstractmethod
     def accept(self, visitor):
@@ -13,9 +18,10 @@ class Activity(ABC):
 
 
 class TeachActivity(Activity):
+    """Опанування дисципліни певного профілю вартістю credits кредитів."""
 
     def __init__(self, profile, credits):
-        self.profile = profile
+        self.profile = profile  # humanitarian / natural
         self.credits = credits
 
     def accept(self, visitor):
@@ -23,6 +29,7 @@ class TeachActivity(Activity):
 
 
 class PayActivity(Activity):
+    """Оплата за гуртожиток (hostel) або харчування (canteen)."""
 
     def __init__(self, target, amount):
         self.target = target  # hostel / canteen
@@ -33,6 +40,7 @@ class PayActivity(Activity):
 
 
 class ObtainActivity(Activity):
+    """Отримання грошей: стипендія (scholarship) чи допомога батьків (help)."""
 
     def __init__(self, source, amount):
         self.source = source  # scholarship / help
@@ -42,6 +50,9 @@ class ObtainActivity(Activity):
         visitor.visit_obtain(self)
 
 
+# ---------------------------------------------------------------------------
+#  Відвідувач
+# ---------------------------------------------------------------------------
 class Visitor(ABC):
     def visit_teach(self, element):
         pass
@@ -54,47 +65,66 @@ class Visitor(ABC):
 
 
 class Student(Visitor):
+    """Конкретний відвідувач — студент, що проживає кроки своєї діяльності.
 
+    Накопичує кредити та гроші. Симуляція триває лише поки студент навчається.
+    Стан завершується у двох випадках:
+      * набрано потрібну кількість кредитів -> диплом отримано (graduated);
+      * забракло грошей на гуртожиток/харчування -> відрахування (expelled).
+    Після цього подальші кроки вже не впливають на студента.
+    """
 
     def __init__(self, direction, required_credits, money):
         self.direction = direction
         self.required_credits = required_credits
         self.money = money
         self.credits = 0
+        self.graduated = False
         self.expelled = False
 
-    def _can_master(self, profile):
+    @property
+    def finished(self):
+        """Чи визначився стан студента (диплом отримано або відрахований)."""
+        return self.graduated or self.expelled
 
+    def _can_master(self, profile):
+        """Чи може студента цього напряму навчати викладач даного профілю."""
         if self.direction == NATURAL_HUMANITARIAN:
-            return True
-        return self.direction == profile
+            return True  # навчають обидва типи викладачів
+        return self.direction == profile  # лише "свій" профіль
 
     def visit_teach(self, element):
-        if self.expelled:
+        if self.finished:
             return
-
+        # викладач потрібного профілю може навчати студента -> дисципліна опанована
         if self._can_master(element.profile):
             self.credits += element.credits
+        # умова зупинки 1: набрано достатньо кредитів -> диплом
+        if self.credits >= self.required_credits:
+            self.graduated = True
 
     def visit_obtain(self, element):
-        if self.expelled:
+        if self.finished:
             return
-
+        # і стипендія, і допомога від батьків поповнюють бюджет студента
         self.money += element.amount
 
     def visit_pay(self, element):
-        if self.expelled:
+        if self.finished:
             return
         if self.money >= element.amount:
             self.money -= element.amount
         else:
-
+            # умова зупинки 2: немає грошей на оплату -> відрахування
             self.expelled = True
 
     def has_diploma(self):
-        return (not self.expelled) and (self.credits >= self.required_credits)
+        return self.graduated
 
 
+# ---------------------------------------------------------------------------
+#  Розбір вхідного файлу
+# ---------------------------------------------------------------------------
 def parse(filename):
     """Зчитує файл і повертає (student, activities)."""
     with open(filename, encoding="utf-8") as f:
@@ -121,11 +151,15 @@ def parse(filename):
 
 def simulate(filename):
     student, activities = parse(filename)
-    for activity in activities:  # студент "відвідує" кожен крок свого життя
+    for activity in activities:  # студент "відвідує" кроки свого життя
+        if student.finished:  # умова зупинки 1 або 2 вже спрацювала
+            break
         activity.accept(student)
+    # умова зупинки 3: кінець файлу (цикл завершився сам)
     return student
 
 
+# ---------------------------------------------------------------------------
 def main():
     import os
 
@@ -136,12 +170,17 @@ def main():
             continue
 
         student = simulate(filename)
+        if student.graduated:
+            state = "отримав диплом"
+        elif student.expelled:
+            state = "відрахований "
+        else:
+            state = "не довчився  "  # файл скінчився, кредитів не набрав
         answer = "отримає диплом" if student.has_diploma() else "НЕ отримає диплом"
         print(f"input{i:02d}.txt | напрям: {student.direction:>21} | "
               f"кредити: {student.credits:>4}/{student.required_credits} | "
               f"гроші: {student.money:>7} | "
-              f"{'відрахований' if student.expelled else 'навчається ':>12} -> "
-              f"студент {answer}")
+              f"{state} -> студент {answer}")
 
 
 if __name__ == "__main__":
